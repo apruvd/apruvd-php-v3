@@ -1,0 +1,23 @@
+{
+    "name": "apruvd/php_sdk_v3",
+    "description": "PHP SDK for the Apruvd API v3",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Justin Horton",
+            "email": "fj@fjhorton.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://gitlab.com/apruvd/apruvd_v3_php"
+        }
+    ],
+    "require": {
+        "nategood/httpful": "^0.2.20"
+    },
+    "autoload": {
+        "psr-4": {"Apruvd\\V3\\": "src/"}
+    }
+}
