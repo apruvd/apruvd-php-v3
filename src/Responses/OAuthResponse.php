@@ -1,8 +1,6 @@
 <?php
 
-namespace Apruvd\V3;
-
-use Apruvd\V3\Responses\APIResponse;
+namespace Apruvd\V3\Responses;
 
 /**
  * Class OAuthResponse
@@ -10,11 +8,24 @@ use Apruvd\V3\Responses\APIResponse;
  */
 class OAuthResponse extends APIResponse {
     /**
-     * @var string $access
+     * @var OAuthTokenResponse $access
      */
-    public $access = null; // OAuthToken;
+    public $access = null; // OAuthTokenResponse;
     /**
-     * @var string $refresh
+     * @var OAuthTokenResponse $refresh
      */
-    public $refresh = null; // OAuthToken;
+    public $refresh = null; // OAuthTokenResponse;
+
+    public function __construct($props = null)
+    {
+        parent::__construct($props);
+
+        if(!empty($props->access)){
+            $this->access = new OAuthTokenResponse($props->access);
+        }
+
+        if(!empty($props->refresh)){
+            $this->refresh = new OAuthTokenResponse($props->refresh);
+        }
+    }
 }

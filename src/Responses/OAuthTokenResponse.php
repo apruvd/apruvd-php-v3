@@ -1,8 +1,6 @@
 <?php
 
-namespace Apruvd\V3;
-
-use Apruvd\V3\Responses\APIResponse;
+namespace Apruvd\V3\Responses;
 
 /**
  * Class OAuthTokenResponse
