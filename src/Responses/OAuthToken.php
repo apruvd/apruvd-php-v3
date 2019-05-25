@@ -8,7 +8,7 @@ use Apruvd\V3\Responses\Nested\NestedHydrator;
  * Class OAuthTokenResponse
  * @package Apruvd\V3
  */
-class OAuthTokenResponse extends APIResponse {
+class OAuthToken extends NestedHydrator {
     /**
      * @var string $type
      */

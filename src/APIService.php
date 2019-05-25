@@ -3,6 +3,7 @@
 namespace Apruvd\V3;
 
 use Apruvd\V3\Models\Transaction;
+use Apruvd\V3\Responses\APIResponse;
 use Apruvd\V3\Responses\CancelTransactionResponse;
 use Apruvd\V3\Responses\CheckTransactionResponse;
 use Apruvd\V3\Responses\ElevateTransactionResponse;
@@ -10,7 +11,9 @@ use Apruvd\V3\Responses\OAuthResponse;
 use Apruvd\V3\Responses\OAuthTokenResponse;
 use Apruvd\V3\Responses\SubmitTransactionResponse;
 use Apruvd\V3\Responses\UpdateTransactionResponse;
+use Closure;
 use Httpful\Mime;
+use Httpful\Request;
 
 /**
  * Class APIService
@@ -44,9 +47,11 @@ class APIService{
     private $token = '';
 
     /**
-     * @var $last_response
+     * @var Closure $token_update_callback
      */
-    private $last_response = null;
+    private $token_update_callback = null;
+
+    private $token_retry_attempted = false;
 
     /**
      * APIService constructor.
@@ -74,6 +79,7 @@ class APIService{
     }
     /**
      * Token getter.
+     * @return string
      */
     public function getToken(){
         return $this->token;
@@ -89,91 +95,90 @@ class APIService{
     }
     /**
      * Refresh Token getter.
+     * @return string
      */
     public function getRefreshToken(){
         return $this->refresh_token;
     }
 
     /**
-     * API failure response getter.
-     */
-    public function lastResponse(){
-        return $this->last_response;
-    }
-
-    /**
      * Create Transaction.
      * @param Transaction $transaction
+     * @return SubmitTransactionResponse
      */
     public function submitTransaction(Transaction $transaction){
         $uri = 'api/transactions/submit/';
         $response = \Httpful\Request::post($this->host.$uri)
-            ->body(json_encode($transaction))
-            ->addHeader('Authorization', 'Bearer '.$this->token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new SubmitTransactionResponse($response->body);
+            ->body(json_encode($transaction));
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new SubmitTransactionResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->submitTransaction($transaction);
         }
-        return null;
+        return $apiResponse;
     }
 
     /**
      * Read single Transaction by ID.
      * @param string $transaction_id
+     * @return CheckTransactionResponse
      */
     public function checkTransaction($transaction_id){
         $uri = "api/transactions/status/?transaction_id={$transaction_id}";
-        $response = \Httpful\Request::get($this->host.$uri)
-            ->addHeader('Authorization', 'Bearer '.$this->token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new CheckTransactionResponse($response->body);
+        $response = \Httpful\Request::get($this->host.$uri);
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new CheckTransactionResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->checkTransaction($transaction_id);
         }
-        return null;
+        return $apiResponse;
     }
 
     /**
      * Update single Transaction by ID.
      * @param string $transaction_id
      * @param Transaction $transaction
+     * @return UpdateTransactionResponse
      */
     public function updateTransaction($transaction_id, $update_fields){
         $transaction = new Transaction($update_fields);
         $uri = "api/transactions/{$transaction_id}/update/";
         $response = \Httpful\Request::post($this->host.$uri)
-            ->body(json_encode($transaction))
-            ->addHeader('Authorization', 'Bearer '.$this->token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new UpdateTransactionResponse($response->body);
+            ->body(json_encode($transaction));
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new UpdateTransactionResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->updateTransaction($transaction_id, $update_fields);
         }
-        return null;
+        return $apiResponse;
     }
 
     /**
      * Cancel single Transaction by ID.
      * @param string $transaction_id
+     * @return CancelTransactionResponse
      */
     public function cancelTransaction($transaction_id){
         $uri = "api/transactions/{$transaction_id}/cancel/";
         $response = \Httpful\Request::post($this->host.$uri)
-            ->body(json_encode(null))
-            ->addHeader('Authorization', 'Bearer '.$this->token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new CancelTransactionResponse($response->body);
+            ->body(json_encode(null));
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new CancelTransactionResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->cancelTransaction($transaction_id);
         }
-        return null;
+        return $apiResponse;
     }
 
     /**
      * Elevate Transaction by ID.
      * @param string $transaction_id
      * @param bool $is_order_number
+     * @return ElevateTransactionResponse
      */
     public function elevateTransaction($transaction_id, $is_order_number = false){
         $uri = 'api/transactions/elevate/';
@@ -186,43 +191,97 @@ class APIService{
         }
 
         $response = \Httpful\Request::post($this->host.$uri)
-            ->body(json_encode($payload))
-            ->addHeader('Authorization', 'Bearer '.$this->token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new ElevateTransactionResponse($response->body);
+            ->body(json_encode($payload));
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new ElevateTransactionResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->elevateTransaction($transaction_id, $is_order_number);
         }
-        return null;
+        return $apiResponse;
     }
 
     /**
      * Create refresh and access tokens from auth credentials.
+     * @return OAuthResponse
      */
     public function authenticateWithOAuth(){
         $uri = 'o/token/?grant_type=password';
         $response = \Httpful\Request::get($this->host.$uri)
             ->authenticateWith($this->id, $this->secret)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new OAuthResponse($response->body);
+        $token = new OAuthResponse($response);
+        if($token->success){
+            $this->refresh_token = $token->refresh->token;
+            $this->token = $token->access->token;
         }
-        return null;
+        return $token;
     }
 
     /**
      * Create access token from refresh token.
+     * @return OAuthTokenResponse
      */
     public function authenticateWithOAuthRefresh(){
         $uri = 'o/token/?grant_type=refresh';
         $response = \Httpful\Request::get($this->host.$uri)
             ->addHeader('Authorization', 'Bearer '.$this->refresh_token)->sendsAndExpects(Mime::JSON)->send();
-
-        $this->last_response = $response;
-        if($response->code >=200 && $response->code < 300){
-            return new OAuthTokenResponse($response->body);
+        $token = new OAuthTokenResponse($response);
+        if($token->success){
+            $this->token = $token->token;
+            if(is_object($this->token_update_callback) && ($this->token_update_callback instanceof Closure)){
+                call_user_func_array($this->token_update_callback, [$token]);
+            }
         }
-        return null;
+        return $token;
+    }
+
+    /**
+     * Create access token from refresh token.
+     * @param Closure $callback
+     */
+    public function onAccessTokenUpdate(Closure $callback){
+        $this->token_update_callback = $callback;
+    }
+
+    /**
+     * Add Auth headers to Httpful request.
+     * @param Request $request
+     * @return Request
+     */
+    protected function bindAuthorization(Request $request){
+        if(!empty($this->token)){
+            $request->addHeader('Authorization', 'Bearer '.$this->token);
+        }
+        elseif(!empty($this->refresh_token)){
+            $token = $this->authenticateWithOAuthRefresh();
+            if($token){
+                $this->token = $token->access->token;
+                $request->addHeader('Authorization', 'Bearer '.$this->token);
+            }
+            else{
+                $request->addHeader('Authorization', 'Basic '.base64_encode($this->id.':'.$this->secret));
+            }
+        }
+        else{
+            $request->addHeader('Authorization', 'Basic '.base64_encode($this->id.':'.$this->secret));
+        }
+        return $request;
+    }
+
+    /**
+     * Sniff response for missing/expired Access Token when Refresh Token is known.
+     * @param APIResponse $response
+     * @return boolean
+     */
+    protected function retryNewToken(APIResponse $response){
+        if($response->code == 400 && $response->error === 'Invalid token' && !empty($this->refresh_token) && !$this->token_retry_attempted ){
+            // Will trigger onAccessTokenUpdate() callback on success
+            $this->token_retry_attempted = true;
+            $token = $this->authenticateWithOAuthRefresh();
+            if($token->success){
+                return true;
+            }
+        }
+        return false;
     }
 }

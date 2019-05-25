@@ -2,11 +2,13 @@
 
 namespace Apruvd\V3\Responses;
 
+use Apruvd\V3\Responses\Nested\NestedHydrator;
+
 /**
  * Class TransactionCallbackResponse
  * @package Apruvd\V3\Responses
  */
-class TransactionCallbackResponse extends APIResponse {
+class TransactionCallbackResponse extends NestedHydrator {
 
     /**
      * @var integer $transaction_id
