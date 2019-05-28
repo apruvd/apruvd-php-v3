@@ -21,11 +21,11 @@ class OAuthResponse extends APIResponse {
         parent::__construct($props);
 
         if(!empty($props->access)){
-            $this->access = new OAuthTokenResponse($props->access);
+            $this->access = new OAuthToken($props->access);
         }
 
         if(!empty($props->refresh)){
-            $this->refresh = new OAuthTokenResponse($props->refresh);
+            $this->refresh = new OAuthToken($props->refresh);
         }
     }
 }

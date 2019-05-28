@@ -16,19 +16,21 @@ class APIAsyncResponseService{
      * @param Closure|null $callback
      * @return mixed
      */
-    public function handle(Closure $callback = null){
+    public static function handle(Closure $callback = null){
         $data = json_decode(file_get_contents('php://input'), true);
         if(!empty($data)){
             $data = new TransactionCallbackResponse($data);
-
-            if($callback !== null){
-                return $callback($data);
-            }
-            else{
-                return $data;
-            }
         }
 
-        return null;
+        if($callback !== null){
+            return $callback($data);
+        }
+        else{
+            return $data;
+        }
+    }
+
+    public static function transactionResponse($props = []){
+        return new TransactionCallbackResponse($props);
     }
 }

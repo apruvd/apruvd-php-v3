@@ -2,6 +2,8 @@
     "name": "apruvd/php_sdk_v3",
     "description": "Lightweight PHP SDK for version 3 of the Apruvd API.",
     "type": "library",
+    "license": "MIT",
+    "homepage": "https://app.apruvd.com/",
     "authors": [
         {
             "name": "Justin Horton",
