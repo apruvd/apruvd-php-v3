@@ -8,7 +8,6 @@ use Apruvd\V3\Responses\CancelTransactionResponse;
 use Apruvd\V3\Responses\CheckTransactionResponse;
 use Apruvd\V3\Responses\ElevateTransactionResponse;
 use Apruvd\V3\Responses\OAuthResponse;
-use Apruvd\V3\Responses\OAuthTokenResponse;
 use Apruvd\V3\Responses\SubmitTransactionResponse;
 use Apruvd\V3\Responses\UpdateTransactionResponse;
 use Closure;
@@ -142,8 +141,7 @@ class APIService{
      * @param Transaction $transaction
      * @return UpdateTransactionResponse
      */
-    public function updateTransaction($transaction_id, $update_fields){
-        $transaction = new Transaction($update_fields);
+    public function updateTransaction($transaction_id, Transaction $transaction){
         $uri = "api/transactions/{$transaction_id}/update/";
         $response = \Httpful\Request::post($this->host.$uri)
             ->body(json_encode($transaction));
@@ -151,7 +149,7 @@ class APIService{
         $response = $response->sends(Mime::JSON)->send();
         $apiResponse = new UpdateTransactionResponse($response);
         if($this->retryNewToken($apiResponse)){
-            $apiResponse = $this->updateTransaction($transaction_id, $update_fields);
+            $apiResponse = $this->updateTransaction($transaction_id, $transaction);
         }
         return $apiResponse;
     }
@@ -208,7 +206,7 @@ class APIService{
     public function authenticateWithOAuth(){
         $uri = 'o/token/?grant_type=password';
         $response = \Httpful\Request::get($this->host.$uri)
-            ->authenticateWith($this->id, $this->secret)->sendsAndExpects(Mime::JSON)->send();
+            ->authenticateWith($this->id, $this->secret)->sends(Mime::JSON)->send();
         $token = new OAuthResponse($response);
         if($token->success){
             $this->refresh_token = $token->refresh->token;
@@ -219,15 +217,16 @@ class APIService{
 
     /**
      * Create access token from refresh token.
-     * @return OAuthTokenResponse
+     * @return OAuthResponse
      */
     public function authenticateWithOAuthRefresh(){
         $uri = 'o/token/?grant_type=refresh';
         $response = \Httpful\Request::get($this->host.$uri)
-            ->addHeader('Authorization', 'Bearer '.$this->refresh_token)->sendsAndExpects(Mime::JSON)->send();
-        $token = new OAuthTokenResponse($response);
+            ->addHeader('Authorization', 'Bearer '.$this->refresh_token)->sends(Mime::JSON)->send();
+        $token = new OAuthResponse($response);
         if($token->success){
-            $this->token = $token->token;
+            $this->refresh_token = $token->refresh->token;
+            $this->token = $token->access->token;
             if(is_object($this->token_update_callback) && ($this->token_update_callback instanceof Closure)){
                 call_user_func_array($this->token_update_callback, [$token]);
             }
