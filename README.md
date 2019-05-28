@@ -16,13 +16,12 @@ $service->{endpoint_method}();
 ### APIAsyncResponseService
 The optional service to grab/transform $_POST JSON data into the appropriate response model. The ```$s```
 ```
-$apiResponse = new \Apruvd\V3\APIAsyncResponseService();
 $callback = function($post_response){ ... };
-$apiResponse->handle($callback);
+\Apruvd\V3\APIAsyncResponseService::handle($callback);
 // or if you don't require a callback function, you can get the response directly in your route/controller
-$response = $apiResponse->handle();
+$response = \Apruvd\V3\APIAsyncResponseService::handle();
 // or if your framework supports JSON request parsing, you can create a response model from that object/array.
-$response = $apiResponse->transactionResponse($json_object)
+$response = \Apruvd\V3\APIAsyncResponseService::transactionResponse($json_object)
 ```
 
 ## Authentication
