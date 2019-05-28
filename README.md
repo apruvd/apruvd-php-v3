@@ -56,6 +56,15 @@ $transaction->cart_contents[] = new CartContents(['item' => 'Foo', 'quantity' =>
 $response = $service->submitTransaction($transaction);
 ```
 
+## Responses
+All responses are well formed and documented. The following properties of the APIModel class are available to all responses, with each response binding it's own additional properties.
+* ```$response->code``` - integer | HTTP Response Code
+* ```$response->detail``` - string | Possible 400/500 error response message
+* ```$response->success``` - boolean | Was HTTP within 200 range
+* ```$response->validation_errors``` - object | Possible 400 validation error response messages. Nested Object.
+* ```$response->response``` - Httpful\Response | Fully formed response from Httpful service. Useful for debugging.
+
+
 ## API Methods and Endpoints
 ##### submitTransaction(Transaction $transaction) : SubmitTransactionResponse
 Submits to ```api/transactions/submit/``` as POST
