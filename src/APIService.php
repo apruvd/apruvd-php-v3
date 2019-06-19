@@ -6,6 +6,7 @@ use Apruvd\V3\Models\Transaction;
 use Apruvd\V3\Responses\APIResponse;
 use Apruvd\V3\Responses\CancelTransactionResponse;
 use Apruvd\V3\Responses\CheckTransactionResponse;
+use Apruvd\V3\Responses\CreateCallbacksResponse;
 use Apruvd\V3\Responses\ElevateTransactionResponse;
 use Apruvd\V3\Responses\OAuthResponse;
 use Apruvd\V3\Responses\SubmitTransactionResponse;
