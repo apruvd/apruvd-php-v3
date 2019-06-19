@@ -8,12 +8,16 @@
         {
             "name": "Justin Horton",
             "email": "fj@fjhorton.com"
+        },
+        {
+            "name": "John Brodie",
+            "email": "john.brodie@apruvd.com"
         }
     ],
     "repositories": [
         {
             "type": "vcs",
-	    "url": "https://github.com/apruvd/apruvd-php-v3.git"
+            "url": "https://github.com/apruvd/apruvd-php-v3.git"
         }
     ],
     "require": {

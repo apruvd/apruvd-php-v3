@@ -101,6 +101,23 @@ class APIService{
     }
 
     /**
+     * Create Callbacks
+     * @param Callbacks $callbacks
+     * @return CreateCallbackResponse
+     */
+    public function createCallbacks($callbacks){
+        $uri = "api/callbacks/";
+        $response = \Httpful\Request::post($this->host.$uri, json_encode($callbacks));
+        $response = $this->bindAuthorization($response);
+        $response = $response->sends(Mime::JSON)->send();
+        $apiResponse = new CreateCallbacksResponse($response);
+        if($this->retryNewToken($apiResponse)){
+            $apiResponse = $this->createCallbacks($webhook);
+        }
+        return $apiResponse;
+    }
+
+    /**
      * Create Transaction.
      * @param Transaction $transaction
      * @return SubmitTransactionResponse
